@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
-import { userDataContext } from '../context/userContext'
+import { userDataContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import aiImg from "../assets/ai.gif"
@@ -16,6 +16,9 @@ function Home() {
   const recognitionRef=useRef(null)
   const [ham,setHam]=useState(false)
   const isRecognizingRef=useRef(false)
+  const errorOccurredRef=useRef(false)
+  const greetingDoneRef = useRef(false)
+  const lastErrorRef = useRef(null) 
   const synth=window.speechSynthesis
 
   const handleLogOut=async ()=>{
@@ -67,6 +70,10 @@ synth.speak(utterence);
   }
 
   const handleCommand=(data)=>{
+    if (!data || !data.type) {
+      speak("Sorry, something went wrong. Please try again.");
+      return;
+    }
     const {type,userInput,response}=data
       speak(response);
     
@@ -105,21 +112,10 @@ useEffect(() => {
 
   recognitionRef.current = recognition;
 
-  let isMounted = true;  // flag to avoid setState on unmounted component
+  let isMounted = true; 
 
-  // Start recognition after 1 second delay only if component still mounted
-  const startTimeout = setTimeout(() => {
-    if (isMounted && !isSpeakingRef.current && !isRecognizingRef.current) {
-      try {
-        recognition.start();
-        console.log("Recognition requested to start");
-      } catch (e) {
-        if (e.name !== "InvalidStateError") {
-          console.error(e);
-        }
-      }
-    }
-  }, 1000);
+  
+ 
 
   recognition.onstart = () => {
     isRecognizingRef.current = true;
@@ -129,7 +125,11 @@ useEffect(() => {
   recognition.onend = () => {
     isRecognizingRef.current = false;
     setListening(false);
-    if (isMounted && !isSpeakingRef.current) {
+    if (isMounted && !isSpeakingRef.current && !errorOccurredRef.current) {
+      if (lastErrorRef.current === 'no-speech') {
+      lastErrorRef.current = null;
+      
+    }
       setTimeout(() => {
         if (isMounted) {
           try {
@@ -143,10 +143,32 @@ useEffect(() => {
     }
   };
 
-  recognition.onerror = (event) => {
+ recognition.onerror = (event) => {
     console.warn("Recognition error:", event.error);
     isRecognizingRef.current = false;
     setListening(false);
+
+    // Network error pe restart NAHI karna — infinite loop banega
+    if (event.error === "network") {
+      console.warn("Network error: Check internet or use offline STT");
+      return; // ⛔ Yahan se bahar nikal jao
+    }
+
+    // no-speech pe thodi der baad restart karo
+    if (event.error === "no-speech") {
+      setTimeout(() => {
+        if (isMounted && !isSpeakingRef.current) {
+          try {
+            recognition.start();
+          } catch (e) {
+            if (e.name !== "InvalidStateError") console.error(e);
+          }
+        }
+      }, 2000);
+      return;
+    }
+
+    // Baaki errors (not aborted) pe normal restart
     if (event.error !== "aborted" && isMounted && !isSpeakingRef.current) {
       setTimeout(() => {
         if (isMounted) {
@@ -163,6 +185,7 @@ useEffect(() => {
 
   recognition.onresult = async (e) => {
     const transcript = e.results[e.results.length - 1][0].transcript.trim();
+    if (!userData || !userData.assistantName) return;
     if (transcript.toLowerCase().includes(userData.assistantName.toLowerCase())) {
       setAiText("");
       setUserText(transcript);
@@ -170,6 +193,11 @@ useEffect(() => {
       isRecognizingRef.current = false;
       setListening(false);
       const data = await getGeminiResponse(transcript);
+      if (!data || !data.response) {
+      speak("Sorry, something went wrong. Please try again.");
+      startRecognition();
+      return;
+      }
       handleCommand(data);
       setAiText(data.response);
       setUserText("");
@@ -177,15 +205,22 @@ useEffect(() => {
   };
 
 
-    const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
-    greeting.lang = 'hi-IN';
    
-    window.speechSynthesis.speak(greeting);
+    if (!greetingDoneRef.current) {
+  greetingDoneRef.current = true;
+  isSpeakingRef.current = true;
+  const greeting = new SpeechSynthesisUtterance(`Hello ${userData.name}, what can I help you with?`);
+  greeting.lang = 'hi-IN';
+  greeting.onend = () => {   
+    isSpeakingRef.current = false;  
+    startRecognition();  
+  };
+  window.speechSynthesis.speak(greeting);
+}
  
 
   return () => {
     isMounted = false;
-    clearTimeout(startTimeout);
     recognition.stop();
     setListening(false);
     isRecognizingRef.current = false;
@@ -196,7 +231,7 @@ useEffect(() => {
 
 
   return (
-    <div className='w-full h-[100vh] bg-gradient-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-[15px]'>
+    <div className='w-full h-[100vh] bg-gradient-to-t from-[black] to-[#02023d] flex justify-center items-center flex-col gap-[15px] overflow-hidden'>
       <CgMenuRight className='lg:hidden text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(true)}/>
       <div className={`absolute lg:hidden top-0 w-full h-full bg-[#00000053] backdrop-blur-lg p-[20px] flex flex-col gap-[20px] items-start ${ham?"translate-x-0":"translate-x-full"} transition-transform`}>
  <RxCross1 className=' text-white absolute top-[20px] right-[20px] w-[25px] h-[25px]' onClick={()=>setHam(false)}/>
@@ -207,9 +242,9 @@ useEffect(() => {
 <h1 className='text-white font-semibold text-[19px]'>History</h1>
 
 <div className='w-full h-[400px] gap-[20px] overflow-y-auto flex flex-col truncate'>
-  {userData.history?.map((his)=>(
-    <div className='text-gray-200 text-[18px] w-full h-[30px]  '>{his}</div>
-  ))}
+  {userData.history?.map((his, index)=>(
+    <div key={index} className='text-gray-200 text-[18px] w-full h-[30px]'>{his}</div>
+))}
 
 </div>
 
