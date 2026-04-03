@@ -6,24 +6,24 @@ import authRouter from "./routes/auth.routes.js"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import userRouter from "./routes/user.routes.js"
-import geminiResponse from "./gemini.js"
 
+const app = express()   
 
-const app=express()
 app.use(cors({
-    origin:"http://localhost:5173",
-    credentials:true
+    origin: "https://virtual-assistant-conqo45o9-navins-projects-e8c11d9c.vercel.app",
+    credentials: true
 }))
-const port=process.env.PORT || 5000
+
+const port = process.env.PORT || 5000
+
 app.use(express.json())
 app.use(cookieParser())
-app.use("/api/auth",authRouter)
-app.use("/api/user",userRouter)
 
+app.use("/api/auth", authRouter)
+app.use("/api/user", userRouter)
 
 connectDb().then(() => {
     app.listen(port, () => {
         console.log("Server started");
     });
 });
-
