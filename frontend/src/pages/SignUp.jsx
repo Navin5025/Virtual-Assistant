@@ -22,7 +22,7 @@ const [err,setErr]=useState("")
     setLoading(true)
 try {
   let result = await axios.post(
-  `${import.meta.env.VITE_BACKEND_URL}/api/auth/signup`,
+  `${serverUrl}/api/auth/signup`,
   { name, email, password },
   { withCredentials: true }
 )
