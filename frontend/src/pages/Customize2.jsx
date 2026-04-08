@@ -3,6 +3,8 @@ import { userDataContext } from '../context/UserContext'
 import axios from 'axios'
 import { MdKeyboardBackspace } from "react-icons/md";
 import { useNavigate } from 'react-router-dom';
+import Footer from "../components/Footer"
+
 function Customize2() {
     const {userData,backendImage,selectedImage,serverUrl,setUserData}=useContext(userDataContext)
     const [assistantName,setAssistantName]=useState(userData?.AssistantName || "")
@@ -40,6 +42,7 @@ setLoading(false)
     }
         } >{!loading?"Finally Create Your Assistant":"Loading..."}</button>}
      
+     <Footer />
     </div>
   )
 }

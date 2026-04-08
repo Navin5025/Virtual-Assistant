@@ -5,6 +5,8 @@ import { IoEyeOff } from "react-icons/io5";
 import { useNavigate } from 'react-router-dom';
 import { userDataContext } from '../context/UserContext';
 import axios from "axios"
+import Footer from "../components/Footer"
+
 function SignUp() {
   const [showPassword,setShowPassword]=useState(false)
   const {serverUrl,userData,setUserData}=useContext(userDataContext)
@@ -50,6 +52,8 @@ try {
 
 <p className='text-[white] text-[18px] cursor-pointer' onClick={()=>navigate("/signin")}>Already have an account ? <span className='text-blue-400'>Sign In</span></p>
  </form>
+
+   <Footer />
     </div>
   )
 }

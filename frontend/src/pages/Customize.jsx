@@ -11,6 +11,8 @@ import { RiImageAddLine } from "react-icons/ri";
 import { userDataContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom'
 import { MdKeyboardBackspace } from "react-icons/md";
+import Footer from "../components/Footer"
+
 function Customize() {
   const {serverUrl,userData,setUserData,backendImage,setBackendImage,frontendImage,setFrontendImage,selectedImage,setSelectedImage}=useContext(userDataContext)
   const navigate=useNavigate()
@@ -43,10 +45,17 @@ setFrontendImage(URL.createObjectURL(file))
     </div>
     <input type="file" accept='image/*' ref={inputImage} hidden onChange={handleImage}/>
       </div>
-{selectedImage && <button className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold cursor-pointer  bg-white rounded-full text-[19px] ' onClick={()=>navigate("/customize2")}>Next</button>}
-      
-    </div>
+ {selectedImage && (
+  <button
+    className='min-w-[150px] h-[60px] mt-[30px] text-black font-semibold cursor-pointer bg-white rounded-full text-[19px]'
+    onClick={() => navigate("/customize2")}
+  >
+    Next
+  </button>
+)}
+
+<Footer />
+</div>
   )
 }
-
 export default Customize

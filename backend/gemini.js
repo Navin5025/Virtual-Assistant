@@ -1,52 +1,100 @@
-import axios from "axios"
-
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-
-const geminiResponse = async (command, assistantName, userName, retries = 3) => {
+const aiResponse = async (command, assistantName, userName) => {
   try {
-    const apiUrl = process.env.GEMINI_API_URL
-    const apiKey = process.env.GEMINI_API_KEY  
+    const text = command.toLowerCase();
 
-    const prompt = `You are a virtual assistant named ${assistantName} created by ${userName}. 
-You are not Google. You will now behave like a voice-enabled assistant.
-
-Your task is to understand the user's natural language input and respond with a JSON object like this:
-
-{
-  "type": "general" | "google-search" | "youtube-search" | "youtube-play" | "get-time" | "get-date" | "get-day" | "get-month"|"calculator-open" | "instagram-open" |"facebook-open" |"weather-show",
-  "userInput": "<original user input>",
-  "response": "<a short spoken response>"
-}
-
-Important:
-- Only respond with JSON
-
-now your userInput- ${command}
-`
-
-    const result = await axios.post(
-      `${apiUrl}?key=${apiKey}`,  
-      { contents: [{ parts: [{ text: prompt }] }] }
-    )
-
-    const rawText = result.data.candidates[0].content.parts[0].text
-    const cleaned = rawText.replace(/```json|```/g, "").trim()
-    return cleaned
-
-  } catch (error) {
-    if (error.response?.status === 429 && retries > 0) {
-      console.log(`Rate limited. ${retries} retries left. Waiting 5s...`)
-      await sleep(5000)
-      return geminiResponse(command, assistantName, userName, retries - 1)
+    if (text.includes("youtube")) {
+      return {
+        type: "youtube-search",
+        userInput: command,
+        response: "Opening YouTube"
+      };
     }
 
-    console.log(error)
-    return JSON.stringify({
+    if (text.includes("google")) {
+      return {
+        type: "google-search",
+        userInput: command,
+        response: "Searching on Google"
+      };
+    }
+
+    if (text.includes("time")) {
+      return {
+        type: "get-time",
+        userInput: command,
+        response: "Fetching current time"
+      };
+    }
+
+    if (text.includes("date")) {
+      return {
+        type: "get-date",
+        userInput: command,
+        response: "Fetching today's date"
+      };
+    }
+
+    if (text.includes("day")) {
+      return {
+        type: "get-day",
+        userInput: command,
+        response: "Fetching today's day"
+      };
+    }
+
+    if (text.includes("month")) {
+      return {
+        type: "get-month",
+        userInput: command,
+        response: "Fetching current month"
+      };
+    }
+
+    if (text.includes("calculator")) {
+      return {
+        type: "calculator-open",
+        userInput: command,
+        response: "Opening calculator"
+      };
+    }
+
+    if (text.includes("instagram")) {
+      return {
+        type: "instagram-open",
+        userInput: command,
+        response: "Opening Instagram"
+      };
+    }
+
+    if (text.includes("facebook")) {
+      return {
+        type: "facebook-open",
+        userInput: command,
+        response: "Opening Facebook"
+      };
+    }
+
+    if (text.includes("weather")) {
+      return {
+        type: "weather-show",
+        userInput: command,
+        response: "Showing weather"
+      };
+    }
+
+    return {
       type: "general",
       userInput: command,
-      response: "Sorry, I am having trouble connecting. Please try again."
-    })
-  }
-}
+      response: "Sorry, I didn't understand. Please try again."
+    };
 
-export default geminiResponse
+  } catch (error) {
+    return {
+      type: "general",
+      userInput: command,
+      response: "Something went wrong"
+    };
+  }
+};
+
+export default aiResponse;
