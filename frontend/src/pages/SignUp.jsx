@@ -21,9 +21,11 @@ const [err,setErr]=useState("")
     setErr("")
     setLoading(true)
 try {
-  let result=await axios.post(`${serverUrl}/api/auth/signup`,{
-    name,email,password
-  },{withCredentials:true} )
+  let result = await axios.post(
+  `${import.meta.env.VITE_BACKEND_URL}/api/auth/signup`,
+  { name, email, password },
+  { withCredentials: true }
+)
  setUserData(result.data)
   setLoading(false)
   navigate("/customize")
@@ -31,7 +33,7 @@ try {
   console.log(error)
   setUserData(null)
   setLoading(false)
-  setErr(error.response.data.message)
+  setErr(error?.response?.data?.message || "Something went wrong")
 }
     }
   return (
