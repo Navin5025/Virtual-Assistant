@@ -13,13 +13,9 @@ import userRouter from "./routes/user.routes.js";
 const app = express();
 
 app.use(cors({
-  origin: [
-    "http://localhost:5173",
-    "https://virtual-assistant-conqo45o9-navins-projects-e8c11d9c.vercel.app",
-  ],
+  origin: true,
   credentials: true
 }));
-
 const port = process.env.PORT || 5000;
 
 app.use(express.json());
