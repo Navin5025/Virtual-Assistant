@@ -13,7 +13,13 @@ import userRouter from "./routes/user.routes.js";
 const app = express();
 
 app.use(cors({
-  origin: true,
+  origin: function(origin, callback) {
+    if (!origin || origin.includes("vercel.app") || origin.includes("localhost")) {
+      callback(null, true)
+    } else {
+      callback(new Error("Not allowed by CORS"))
+    }
+  },
   credentials: true
 }));
 const port = process.env.PORT || 5000;
